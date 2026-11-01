@@ -22,4 +22,10 @@ public interface IShowRepository
     Task UpdateAsync(Show show);
 
     Task DeleteAsync(Show show);
+
+    Task<bool> HasTimeOverlapAsync(
+    int screenId,
+    DateTime startTime,
+    DateTime endTime,
+    int? excludeShowId = null);
 }

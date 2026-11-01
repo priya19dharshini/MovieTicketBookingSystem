@@ -1,4 +1,5 @@
 ﻿using MovieTicketBookingSystem.DTOs.Shows;
+using MovieTicketBookingSystem.Exceptions;
 using MovieTicketBookingSystem.Models;
 using MovieTicketBookingSystem.Repositories.Interfaces;
 using MovieTicketBookingSystem.Services.Interfaces;
@@ -8,7 +9,6 @@ namespace MovieTicketBookingSystem.Services;
 public class ShowService : IShowService
 {
     private readonly IShowRepository _repository;
-
     private readonly ITheatreRepository _theatreRepository;
     private readonly IMovieRepository _movieRepository;
     private readonly IScreenRepository _screenRepository;
@@ -33,6 +33,12 @@ public class ShowService : IShowService
         int? movieId,
         int? theatreId)
     {
+        if (movieId.HasValue && movieId.Value <= 0)
+            throw new BadRequestException("Movie ID must be greater than zero.");
+
+        if (theatreId.HasValue && theatreId.Value <= 0)
+            throw new BadRequestException("Theatre ID must be greater than zero.");
+
         var shows = await _repository.GetAllAsync(
             date, movieId, theatreId);
 
@@ -41,6 +47,9 @@ public class ShowService : IShowService
 
     public async Task<ShowResponse?> GetByIdAsync(int id)
     {
+        if (id <= 0)
+            throw new BadRequestException("Show ID must be greater than zero.");
+
         var show = await _repository.GetByIdAsync(id);
 
         return show == null ? null : MapToResponse(show);
@@ -48,12 +57,13 @@ public class ShowService : IShowService
 
     public async Task<List<ShowResponse>> GetByMovieIdAsync(int movieId)
     {
+        if (movieId <= 0)
+            throw new BadRequestException("Movie ID must be greater than zero.");
+
         var movie = await _movieRepository.GetByIdAsync(movieId);
 
         if (movie == null)
-        {
-            throw new KeyNotFoundException("Movie not found.");
-        }
+            throw new NotFoundException("Movie not found.");
 
         var shows = await _repository.GetByMovieIdAsync(movieId);
 
@@ -61,14 +71,15 @@ public class ShowService : IShowService
     }
 
     public async Task<List<ShowResponse>?> GetByTheatreIdAsync(
-     int theatreId)
+        int theatreId)
     {
+        if (theatreId <= 0)
+            throw new BadRequestException("Theatre ID must be greater than zero.");
+
         var theatre = await _theatreRepository.GetByIdAsync(theatreId);
 
         if (theatre == null)
-        {
             return null;
-        }
 
         var shows = await _repository.GetByTheatreIdAsync(theatreId);
 
@@ -77,6 +88,9 @@ public class ShowService : IShowService
 
     public async Task<List<ShowResponse>> SearchByDateAsync(DateTime date)
     {
+        if (date == default)
+            throw new BadRequestException("A valid date is required.");
+
         var shows = await _repository.SearchByDateAsync(date);
 
         return shows.Select(MapToResponse).ToList();
@@ -84,22 +98,22 @@ public class ShowService : IShowService
 
     public async Task<ShowResponse> CreateAsync(CreateShowRequest request)
     {
-        ValidateSchedule(request.StartTime, request.EndTime,
+        ValidateSchedule(
+            request.MovieId,
+            request.ScreenId,
+            request.StartTime,
+            request.EndTime,
             request.TicketPrice);
 
         var movie = await _movieRepository.GetByIdAsync(request.MovieId);
 
         if (movie == null)
-        {
-            throw new KeyNotFoundException("Movie not found.");
-        }
+            throw new NotFoundException("Movie not found.");
 
         var screen = await _screenRepository.GetByIdAsync(request.ScreenId);
 
         if (screen == null)
-        {
-            throw new KeyNotFoundException("Screen not found.");
-        }
+            throw new NotFoundException("Screen not found.");
 
         var seats = await _seatRepository.GetByScreenIdAsync(
             request.ScreenId);
@@ -113,7 +127,7 @@ public class ShowService : IShowService
             TicketPrice = request.TicketPrice
         };
 
-        // Repository creates Show and all its Available ShowSeats
+        // Repository creates Show and its Available ShowSeats
         // within one database transaction.
         await _repository.AddWithSeatsAsync(show, seats);
 
@@ -121,39 +135,39 @@ public class ShowService : IShowService
     }
 
     public async Task<ShowResponse?> UpdateAsync(
-        int id, UpdateShowRequest request)
+        int id,
+        UpdateShowRequest request)
     {
-        ValidateSchedule(request.StartTime, request.EndTime,
-            request.TicketPrice);
+        if (id <= 0)
+            throw new BadRequestException("Show ID must be greater than zero.");
 
         var show = await _repository.GetByIdAsync(id);
 
         if (show == null)
-        {
             return null;
-        }
+
+        ValidateSchedule(
+            request.MovieId,
+            request.ScreenId,
+            request.StartTime,
+            request.EndTime,
+            request.TicketPrice);
 
         var movie = await _movieRepository.GetByIdAsync(request.MovieId);
 
         if (movie == null)
-        {
-            throw new KeyNotFoundException("Movie not found.");
-        }
+            throw new NotFoundException("Movie not found.");
 
         var screen = await _screenRepository.GetByIdAsync(request.ScreenId);
 
         if (screen == null)
-        {
-            throw new KeyNotFoundException("Screen not found.");
-        }
+            throw new NotFoundException("Screen not found.");
 
         // Screen changes would require rebuilding ShowSeats.
-        // Keep the screen fixed for this first implementation.
+        // Keep the screen fixed for this implementation.
         if (show.ScreenId != request.ScreenId)
-        {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 "Changing the screen of an existing show is not supported.");
-        }
 
         show.MovieId = request.MovieId;
         show.StartTime = request.StartTime;
@@ -167,12 +181,13 @@ public class ShowService : IShowService
 
     public async Task<bool> DeleteAsync(int id)
     {
+        if (id <= 0)
+            throw new BadRequestException("Show ID must be greater than zero.");
+
         var show = await _repository.GetByIdAsync(id);
 
         if (show == null)
-        {
             return false;
-        }
 
         await _repository.DeleteAsync(show);
 
@@ -180,21 +195,39 @@ public class ShowService : IShowService
     }
 
     private static void ValidateSchedule(
+        int movieId,
+        int screenId,
         DateTime startTime,
         DateTime endTime,
         decimal ticketPrice)
     {
+        if (movieId <= 0)
+            throw new BadRequestException(
+                "Movie ID must be greater than zero.");
+
+        if (screenId <= 0)
+            throw new BadRequestException(
+                "Screen ID must be greater than zero.");
+
+        if (startTime == default)
+            throw new BadRequestException(
+                "A valid start time is required.");
+
+        if (endTime == default)
+            throw new BadRequestException(
+                "A valid end time is required.");
+
         if (endTime <= startTime)
-        {
-            throw new InvalidOperationException(
+            throw new BadRequestException(
                 "EndTime must be later than StartTime.");
-        }
 
         if (ticketPrice < 0)
-        {
-            throw new InvalidOperationException(
+            throw new BadRequestException(
                 "TicketPrice cannot be negative.");
-        }
+
+        if (ticketPrice > 99999999.99m)
+            throw new BadRequestException(
+                "TicketPrice cannot exceed 99999999.99.");
     }
 
     private static ShowResponse MapToResponse(Show show)

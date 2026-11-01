@@ -1,9 +1,8 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace MovieTicketBookingSystem.DTOs.Movies;
 
-public class CreateMovieRequest
+public class CreateMovieRequest : IValidatableObject
 {
     [Required]
     [StringLength(150)]
@@ -24,4 +23,15 @@ public class CreateMovieRequest
     [Required]
     [StringLength(50)]
     public string Genre { get; set; } = string.Empty;
+
+    public IEnumerable<ValidationResult> Validate(
+        ValidationContext validationContext)
+    {
+        if (ReleaseDate == default)
+        {
+            yield return new ValidationResult(
+                "Release date is required.",
+                new[] { nameof(ReleaseDate) });
+        }
+    }
 }

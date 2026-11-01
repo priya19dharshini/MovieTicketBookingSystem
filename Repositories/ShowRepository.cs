@@ -146,4 +146,18 @@ public class ShowRepository : IShowRepository
             throw;
         }
     }
+
+    public async Task<bool> HasTimeOverlapAsync(
+    int screenId,
+    DateTime startTime,
+    DateTime endTime,
+    int? excludeShowId = null)
+    {
+        return await _context.Shows.AnyAsync(s =>
+            s.ScreenId == screenId &&
+            s.StartTime < endTime &&
+            s.EndTime > startTime &&
+            (!excludeShowId.HasValue ||
+             s.ShowId != excludeShowId.Value));
+    }
 }

@@ -4,10 +4,14 @@ using MovieTicketBookingSystem.Repositories;
 using MovieTicketBookingSystem.Repositories.Interfaces;
 using MovieTicketBookingSystem.Services;
 using MovieTicketBookingSystem.Services.Interfaces;
+using MovieTicketBookingSystem.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
@@ -32,6 +36,8 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

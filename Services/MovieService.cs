@@ -1,9 +1,8 @@
-﻿
-using MovieTicketBookingSystem.DTOs.Movies;
+﻿using MovieTicketBookingSystem.DTOs.Movies;
+using MovieTicketBookingSystem.Exceptions;
 using MovieTicketBookingSystem.Models;
 using MovieTicketBookingSystem.Repositories.Interfaces;
 using MovieTicketBookingSystem.Services.Interfaces;
-
 
 namespace MovieTicketBookingSystem.Services;
 
@@ -44,10 +43,15 @@ public class MovieService : IMovieService
             .ToList();
     }
 
-    public async Task<MovieResponse> CreateAsync(CreateMovieRequest request)
+    public async Task<MovieResponse> CreateAsync(
+        CreateMovieRequest request)
     {
-        if (request.DurationMinutes <= 0)
-            throw new ArgumentException("Duration must be greater than zero.");
+        ValidateMovie(
+            request.Title,
+            request.DurationMinutes,
+            request.ReleaseDate,
+            request.Language,
+            request.Genre);
 
         var movie = new Movie
         {
@@ -73,8 +77,12 @@ public class MovieService : IMovieService
         if (movie == null)
             return null;
 
-        if (request.DurationMinutes <= 0)
-            throw new ArgumentException("Duration must be greater than zero.");
+        ValidateMovie(
+            request.Title,
+            request.DurationMinutes,
+            request.ReleaseDate,
+            request.Language,
+            request.Genre);
 
         movie.Title = request.Title;
         movie.Description = request.Description;
@@ -100,6 +108,33 @@ public class MovieService : IMovieService
         return true;
     }
 
+    private static void ValidateMovie(
+        string title,
+        int durationMinutes,
+        DateOnly releaseDate,
+        string language,
+        string genre)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw new BadRequestException("Movie title is required.");
+
+        if (durationMinutes <= 0)
+            throw new BadRequestException(
+                "Duration must be greater than zero.");
+
+        if (releaseDate == default)
+            throw new BadRequestException(
+                "Release date is required.");
+
+        if (string.IsNullOrWhiteSpace(language))
+            throw new BadRequestException(
+                "Movie language is required.");
+
+        if (string.IsNullOrWhiteSpace(genre))
+            throw new BadRequestException(
+                "Movie genre is required.");
+    }
+
     private static MovieResponse MapToResponse(Movie movie)
     {
         return new MovieResponse
@@ -114,4 +149,3 @@ public class MovieService : IMovieService
         };
     }
 }
-

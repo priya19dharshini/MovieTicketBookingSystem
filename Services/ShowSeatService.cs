@@ -1,4 +1,5 @@
 ﻿using MovieTicketBookingSystem.DTOs.ShowSeats;
+using MovieTicketBookingSystem.Exceptions;
 using MovieTicketBookingSystem.Repositories.Interfaces;
 using MovieTicketBookingSystem.Services.Interfaces;
 
@@ -20,6 +21,13 @@ public class ShowSeatService : IShowSeatService
     public async Task<List<ShowSeatResponse>?> GetByShowIdAsync(
         int showId)
     {
+        // Validate Show ID.
+        if (showId <= 0)
+        {
+            throw new BadRequestException(
+                "Show ID must be greater than zero.");
+        }
+
         // First check whether the show exists.
         var show = await _showRepository.GetByIdAsync(showId);
 

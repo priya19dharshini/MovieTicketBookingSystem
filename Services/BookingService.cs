@@ -1,4 +1,5 @@
 ﻿using MovieTicketBookingSystem.DTOs.Bookings;
+using MovieTicketBookingSystem.Exceptions;
 using MovieTicketBookingSystem.Models;
 using MovieTicketBookingSystem.Repositories.Interfaces;
 using MovieTicketBookingSystem.Services.Interfaces;
@@ -21,65 +22,68 @@ public class BookingService : IBookingService
     public async Task<BookingResponse> CreateAsync(
         CreateBookingRequest request)
     {
-        // 1. Validate customer details
-        if (string.IsNullOrWhiteSpace(request.CustomerName) ||
-            string.IsNullOrWhiteSpace(request.CustomerEmail) ||
-            string.IsNullOrWhiteSpace(request.CustomerPhone))
+        // 1. Validate customer details.
+        ValidateCustomerDetails(
+            request.CustomerName,
+            request.CustomerEmail,
+            request.CustomerPhone);
+
+        // 2. Validate selected seats.
+        if (request.ShowId <= 0)
         {
-            throw new ArgumentException(
-                "Customer name, email and phone are required.");
+            throw new BadRequestException(
+                "Show ID must be greater than zero.");
         }
 
-        // 2. Validate selected seats
         if (request.SeatIds == null || request.SeatIds.Count == 0)
         {
-            throw new ArgumentException(
+            throw new BadRequestException(
                 "Select at least one seat.");
         }
 
-        if (request.SeatIds.Any(id => id < 1))
+        if (request.SeatIds.Any(id => id <= 0))
         {
-            throw new ArgumentException(
-                "SeatIds must be greater than zero.");
+            throw new BadRequestException(
+                "Seat IDs must be greater than zero.");
         }
 
         if (request.SeatIds.Distinct().Count() != request.SeatIds.Count)
         {
-            throw new ArgumentException(
-                "Duplicate SeatIds are not allowed.");
+            throw new BadRequestException(
+                "Duplicate Seat IDs are not allowed.");
         }
 
-        // 3. Check whether the show exists
+        // 3. Check whether the show exists.
         var show = await _showRepository.GetByIdAsync(request.ShowId);
 
         if (show == null)
         {
-            throw new KeyNotFoundException("Show not found.");
+            throw new NotFoundException("Show not found.");
         }
 
-        // 4. Retrieve the requested ShowSeats
+        // 4. Retrieve the requested ShowSeats.
         var showSeats = await _bookingRepository.GetShowSeatsAsync(
             request.ShowId,
             request.SeatIds);
 
-        // Check whether every requested seat belongs to this show
+        // Check whether every requested seat belongs to this show.
         if (showSeats.Count != request.SeatIds.Count)
         {
-            throw new ArgumentException(
+            throw new BadRequestException(
                 "One or more selected seats do not belong to this show.");
         }
 
-        // 5. Check seat availability
+        // 5. Check seat availability.
         if (showSeats.Any(ss => ss.Status != "Available"))
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 "One or more selected seats are already booked.");
         }
 
-        // 6. Calculate total amount using server-side ticket price
+        // 6. Calculate total amount using server-side ticket price.
         decimal totalAmount = show.TicketPrice * showSeats.Count;
 
-        // 7. Create Booking
+        // 7. Create Booking.
         var booking = new Booking
         {
             BookingReference =
@@ -101,12 +105,12 @@ public class BookingService : IBookingService
         };
 
         // 8. Save booking, booking seats and seat status
-        // inside one database transaction
+        // inside one database transaction.
         await _bookingRepository.AddWithSeatsAsync(
             booking,
             showSeats);
 
-        // 9. Return booking response
+        // 9. Return booking response.
         return MapToResponse(booking, showSeats);
     }
 
@@ -114,6 +118,12 @@ public class BookingService : IBookingService
         int? showId,
         string? status)
     {
+        if (showId.HasValue && showId.Value <= 0)
+        {
+            throw new BadRequestException(
+                "Show ID must be greater than zero.");
+        }
+
         var bookings = await _bookingRepository.GetAllAsync(
             showId,
             status);
@@ -132,6 +142,12 @@ public class BookingService : IBookingService
 
     public async Task<BookingResponse?> GetByIdAsync(int id)
     {
+        if (id <= 0)
+        {
+            throw new BadRequestException(
+                "Booking ID must be greater than zero.");
+        }
+
         var booking = await _bookingRepository.GetByIdAsync(id);
 
         if (booking == null)
@@ -153,6 +169,12 @@ public class BookingService : IBookingService
     public async Task<List<BookingResponse>?> GetByShowIdAsync(
         int showId)
     {
+        if (showId <= 0)
+        {
+            throw new BadRequestException(
+                "Show ID must be greater than zero.");
+        }
+
         var show = await _showRepository.GetByIdAsync(showId);
 
         if (show == null)
@@ -176,7 +198,14 @@ public class BookingService : IBookingService
 
     public async Task<BookingResponse?> CancelAsync(int id)
     {
-        // 1. Find booking
+        // 1. Validate Booking ID.
+        if (id <= 0)
+        {
+            throw new BadRequestException(
+                "Booking ID must be greater than zero.");
+        }
+
+        // 2. Find booking.
         var booking = await _bookingRepository.GetByIdAsync(id);
 
         if (booking == null)
@@ -184,14 +213,14 @@ public class BookingService : IBookingService
             return null;
         }
 
-        // 2. Only Confirmed bookings can be cancelled
+        // 3. Only Confirmed bookings can be cancelled.
         if (booking.Status != "Confirmed")
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 "Only confirmed bookings can be cancelled.");
         }
 
-        // 3. Get the ShowSeats belonging to this booking
+        // 4. Get the ShowSeats belonging to this booking.
         var seatIds = booking.BookingSeats
             .Select(bs => bs.SeatId)
             .ToList();
@@ -202,15 +231,57 @@ public class BookingService : IBookingService
 
         if (showSeats.Count != seatIds.Count)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 "Booking seat availability records could not be found.");
         }
 
-        // 4. Cancel booking and release seats in one transaction
+        // 5. Cancel booking and release seats in one transaction.
         await _bookingRepository.CancelAsync(booking, showSeats);
 
-        // 5. Return updated booking
+        // 6. Return updated booking.
         return MapToResponse(booking, showSeats);
+    }
+
+    private static void ValidateCustomerDetails(
+        string customerName,
+        string customerEmail,
+        string customerPhone)
+    {
+        if (string.IsNullOrWhiteSpace(customerName))
+        {
+            throw new BadRequestException(
+                "Customer name is required.");
+        }
+
+        if (customerName.Trim().Length > 100)
+        {
+            throw new BadRequestException(
+                "Customer name cannot exceed 100 characters.");
+        }
+
+        if (string.IsNullOrWhiteSpace(customerEmail))
+        {
+            throw new BadRequestException(
+                "Customer email is required.");
+        }
+
+        if (customerEmail.Trim().Length > 150)
+        {
+            throw new BadRequestException(
+                "Customer email cannot exceed 150 characters.");
+        }
+
+        if (string.IsNullOrWhiteSpace(customerPhone))
+        {
+            throw new BadRequestException(
+                "Customer phone is required.");
+        }
+
+        if (customerPhone.Trim().Length > 15)
+        {
+            throw new BadRequestException(
+                "Customer phone cannot exceed 15 characters.");
+        }
     }
 
     private static BookingResponse MapToResponse(

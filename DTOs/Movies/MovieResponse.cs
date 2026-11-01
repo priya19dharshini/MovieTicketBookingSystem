@@ -17,3 +17,5 @@ public class MovieResponse
 
     public string Genre { get; set; } = string.Empty;
 }
+
+
