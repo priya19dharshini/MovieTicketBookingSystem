@@ -39,7 +39,9 @@ public class MovieService : IMovieService
     {
         var movies = await _repository.SearchAsync(title);
 
-        return movies.Select(MapToResponse).ToList();
+        return movies
+            .Select(movie => MapToResponse(movie))
+            .ToList();
     }
 
     public async Task<MovieResponse> CreateAsync(CreateMovieRequest request)
@@ -112,3 +114,4 @@ public class MovieService : IMovieService
         };
     }
 }
+

@@ -10,9 +10,14 @@ public class ShowsController : ControllerBase
 {
     private readonly IShowService _showService;
 
-    public ShowsController(IShowService showService)
+    private readonly IShowSeatService _showSeatService;
+
+    public ShowsController(
+     IShowService showService,
+     IShowSeatService showSeatService)
     {
         _showService = showService;
+        _showSeatService = showSeatService;
     }
 
     // 1. Get all shows with optional filters
@@ -76,6 +81,25 @@ public class ShowsController : ControllerBase
         }
 
         return Ok(shows);
+    }
+
+    // Get all seats and their availability for a show
+    [HttpGet("{showId:int}/seats")]
+    public async Task<IActionResult> GetSeatsByShowId(int showId)
+    {
+        if (showId < 1)
+        {
+            return BadRequest("Invalid ShowId.");
+        }
+
+        var seats = await _showSeatService.GetByShowIdAsync(showId);
+
+        if (seats == null)
+        {
+            return NotFound("Show not found.");
+        }
+
+        return Ok(seats);
     }
 
     // 5. Search shows by date

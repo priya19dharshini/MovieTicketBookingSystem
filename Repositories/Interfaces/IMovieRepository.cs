@@ -19,7 +19,7 @@ public interface IMovieRepository
 
     Task DeleteAsync(Movie movie);
 
-    Task<List<Movie?>> SearchAsync(string title);
+    Task<List<Movie>> SearchAsync(string title);
 
 
 
