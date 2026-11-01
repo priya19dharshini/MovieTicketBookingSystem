@@ -14,8 +14,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
+builder.Services.AddScoped<ITheatreRepository, TheatreRepository>();
 
 builder.Services.AddScoped<IMovieService, MovieService>();
+builder.Services.AddScoped<ITheatreService, TheatreService>();
 
 builder.Services.AddOpenApi();
 
