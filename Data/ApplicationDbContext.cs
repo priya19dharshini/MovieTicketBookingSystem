@@ -18,6 +18,10 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Seat> Seats { get; set; }
 
+    public DbSet<Show> Shows { get; set; }
+
+    public DbSet<ShowSeat> ShowSeats { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -113,6 +117,69 @@ public class ApplicationDbContext : DbContext
                 s.ScreenId,
                 s.RowName,
                 s.SeatNumber
+            }).IsUnique();
+        });
+
+        modelBuilder.Entity<Show>(entity =>
+        {
+            entity.HasKey(s => s.ShowId);
+
+            entity.Property(s => s.StartTime)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.Property(s => s.EndTime)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.Property(s => s.TicketPrice)
+                .HasColumnType("decimal(10,2)")
+                .IsRequired();
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_Shows_EndTime",
+                    "[EndTime] > [StartTime]");
+
+                t.HasCheckConstraint(
+                    "CK_Shows_TicketPrice",
+                    "[TicketPrice] >= 0");
+            });
+
+            entity.HasOne(s => s.Movie)
+                .WithMany()
+                .HasForeignKey(s => s.MovieId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(s => s.Screen)
+                .WithMany()
+                .HasForeignKey(s => s.ScreenId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ShowSeat>(entity =>
+        {
+            entity.HasKey(ss => ss.ShowSeatId);
+
+            entity.Property(ss => ss.Status)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.HasOne(ss => ss.Show)
+                .WithMany()
+                .HasForeignKey(ss => ss.ShowId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(ss => ss.Seat)
+                .WithMany()
+                .HasForeignKey(ss => ss.SeatId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(ss => new
+            {
+                ss.ShowId,
+                ss.SeatId
             }).IsUnique();
         });
     }
