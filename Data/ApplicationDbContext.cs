@@ -16,6 +16,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Screen> Screens { get; set; }
 
+    public DbSet<Seat> Seats { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -80,6 +82,38 @@ public class ApplicationDbContext : DbContext
 
             entity.HasIndex(s => new { s.TheatreId, s.ScreenName })
                 .IsUnique();
+        });
+
+        modelBuilder.Entity<Seat>(entity =>
+        {
+            entity.HasKey(s => s.SeatId);
+
+            entity.Property(s => s.RowName)
+                .HasMaxLength(5)
+                .IsRequired();
+
+            entity.Property(s => s.SeatNumber)
+                .IsRequired();
+
+            entity.Property(s => s.SeatType)
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.ToTable(t => t.HasCheckConstraint(
+                "CK_Seats_SeatNumber",
+                "[SeatNumber] > 0"));
+
+            entity.HasOne(s => s.Screen)
+                .WithMany()
+                .HasForeignKey(s => s.ScreenId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(s => new
+            {
+                s.ScreenId,
+                s.RowName,
+                s.SeatNumber
+            }).IsUnique();
         });
     }
 }
