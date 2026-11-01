@@ -14,6 +14,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Movie> Movies { get; set; }
     public DbSet<Theatre> Theatres { get; set; }
 
+    public DbSet<Screen> Screens { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -61,6 +63,23 @@ public class ApplicationDbContext : DbContext
             entity.Property(t => t.Location)
                   .HasMaxLength(200)
                   .IsRequired();
+        });
+
+        modelBuilder.Entity<Screen>(entity =>
+        {
+            entity.HasKey(s => s.ScreenId);
+
+            entity.Property(s => s.ScreenName)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.HasOne(s => s.Theatre)
+                .WithMany()
+                .HasForeignKey(s => s.TheatreId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(s => new { s.TheatreId, s.ScreenName })
+                .IsUnique();
         });
     }
 }
