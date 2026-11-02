@@ -1,8 +1,8 @@
 ﻿
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MovieTicketBookingSystem.Constants;
 using MovieTicketBookingSystem.DTOs.Movies;
-using MovieTicketBookingSystem.Models;
-using MovieTicketBookingSystem.Services;
 using MovieTicketBookingSystem.Services.Interfaces;
 
 namespace MovieTicketBookingSystem.Controllers;
@@ -19,11 +19,13 @@ public class MoviesController : ControllerBase
     }
 
     // GET: api/movies
+    // Public access
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAll(
-     [FromQuery] int pageNumber = 1,
-     [FromQuery] int pageSize = 10,
-     [FromQuery] string? title = null)
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? title = null)
     {
         if (pageNumber < 1 || pageSize < 1 || pageSize > 100)
         {
@@ -38,11 +40,15 @@ public class MoviesController : ControllerBase
         return Ok(movies);
     }
 
-
     // GET: api/movies/1
+    // Public access
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
+        if (id < 1)
+            return BadRequest("Invalid MovieId.");
+
         var movie = await _service.GetByIdAsync(id);
 
         if (movie == null)
@@ -52,8 +58,11 @@ public class MoviesController : ControllerBase
     }
 
     // GET: api/movies/search?title=leo
+    // Public access
+    [AllowAnonymous]
     [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] string title)
+    public async Task<IActionResult> Search(
+        [FromQuery] string title)
     {
         if (string.IsNullOrWhiteSpace(title))
             return BadRequest("Title is required.");
@@ -64,8 +73,11 @@ public class MoviesController : ControllerBase
     }
 
     // POST: api/movies
+    // Admin only
+    [Authorize(Roles = UserRoles.Admin)]
     [HttpPost]
-    public async Task<IActionResult> Create(CreateMovieRequest request)
+    public async Task<IActionResult> Create(
+        CreateMovieRequest request)
     {
         var movie = await _service.CreateAsync(request);
 
@@ -76,11 +88,16 @@ public class MoviesController : ControllerBase
     }
 
     // PUT: api/movies/1
+    // Admin only
+    [Authorize(Roles = UserRoles.Admin)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id,
         UpdateMovieRequest request)
     {
+        if (id < 1)
+            return BadRequest("Invalid MovieId.");
+
         var movie = await _service.UpdateAsync(id, request);
 
         if (movie == null)
@@ -90,9 +107,14 @@ public class MoviesController : ControllerBase
     }
 
     // DELETE: api/movies/1
+    // Admin only
+    [Authorize(Roles = UserRoles.Admin)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (id < 1)
+            return BadRequest("Invalid MovieId.");
+
         var deleted = await _service.DeleteAsync(id);
 
         if (!deleted)

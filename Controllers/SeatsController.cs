@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MovieTicketBookingSystem.Constants;
 using MovieTicketBookingSystem.DTOs.Seats;
 using MovieTicketBookingSystem.Services.Interfaces;
 
@@ -15,7 +18,8 @@ public class SeatsController : ControllerBase
         _seatService = seatService;
     }
 
-    // 1. Get seats by screen ID
+    // 1. Get seats by screen ID - Public
+    [AllowAnonymous]
     [HttpGet("screen/{screenId:int}")]
     public async Task<IActionResult> GetByScreenId(int screenId)
     {
@@ -34,10 +38,16 @@ public class SeatsController : ControllerBase
         return Ok(seats);
     }
 
-    // 2. Get seat by ID
+    // 2. Get seat by ID - Public
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid SeatId.");
+        }
+
         var seat = await _seatService.GetByIdAsync(id);
 
         if (seat == null)
@@ -48,7 +58,8 @@ public class SeatsController : ControllerBase
         return Ok(seat);
     }
 
-    // 3. Create one seat
+    // 3. Create one seat - Admin or TheatreManager
+    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.TheatreManager)]
     [HttpPost]
     public async Task<IActionResult> Create(CreateSeatRequest request)
     {
@@ -71,7 +82,8 @@ public class SeatsController : ControllerBase
         }
     }
 
-    // 4. Bulk create seats
+    // 4. Bulk create seats - Admin or TheatreManager
+    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.TheatreManager)]
     [HttpPost("bulk")]
     public async Task<IActionResult> BulkCreate(
         BulkCreateSeatsRequest request)
@@ -94,11 +106,17 @@ public class SeatsController : ControllerBase
         }
     }
 
-    // 5. Update seat
+    // 5. Update seat - Admin or TheatreManager
+    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.TheatreManager)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id, UpdateSeatRequest request)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid SeatId.");
+        }
+
         try
         {
             var seat = await _seatService.UpdateAsync(id, request);
@@ -120,10 +138,16 @@ public class SeatsController : ControllerBase
         }
     }
 
-    // 6. Delete seat
+    // 6. Delete seat - Admin or TheatreManager
+    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.TheatreManager)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid SeatId.");
+        }
+
         var result = await _seatService.DeleteAsync(id);
 
         if (!result)

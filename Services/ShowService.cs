@@ -115,6 +115,15 @@ public class ShowService : IShowService
         if (screen == null)
             throw new NotFoundException("Screen not found.");
 
+        var hasOverlap = await _repository.HasTimeOverlapAsync(
+    request.ScreenId,
+    request.StartTime,
+    request.EndTime);
+
+        if (hasOverlap)
+            throw new ConflictException(
+                "Another show is already scheduled on this screen during the requested time.");
+
         var seats = await _seatRepository.GetByScreenIdAsync(
             request.ScreenId);
 
@@ -162,6 +171,16 @@ public class ShowService : IShowService
 
         if (screen == null)
             throw new NotFoundException("Screen not found.");
+
+        var hasOverlap = await _repository.HasTimeOverlapAsync(
+    request.ScreenId,
+    request.StartTime,
+    request.EndTime,
+    id);
+
+        if (hasOverlap)
+            throw new ConflictException(
+                "Another show is already scheduled on this screen during the requested time.");
 
         // Screen changes would require rebuilding ShowSeats.
         // Keep the screen fixed for this implementation.

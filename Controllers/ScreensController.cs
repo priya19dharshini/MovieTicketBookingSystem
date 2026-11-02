@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MovieTicketBookingSystem.Constants;
 using MovieTicketBookingSystem.DTOs.Screens;
 using MovieTicketBookingSystem.Services.Interfaces;
 
@@ -15,7 +18,8 @@ public class ScreensController : ControllerBase
         _screenService = screenService;
     }
 
-    // 1. Get all screens (optional theatreId filter)
+    // 1. Get all screens - Public
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] int? theatreId = null)
@@ -30,10 +34,16 @@ public class ScreensController : ControllerBase
         return Ok(screens);
     }
 
-    // 2. Get screen by ID
+    // 2. Get screen by ID - Public
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid ScreenId.");
+        }
+
         var screen = await _screenService.GetByIdAsync(id);
 
         if (screen == null)
@@ -44,7 +54,8 @@ public class ScreensController : ControllerBase
         return Ok(screen);
     }
 
-    // 3. Get screens belonging to a theatre
+    // 3. Get screens belonging to a theatre - Public
+    [AllowAnonymous]
     [HttpGet("theatre/{theatreId:int}")]
     public async Task<IActionResult> GetByTheatreId(int theatreId)
     {
@@ -63,7 +74,8 @@ public class ScreensController : ControllerBase
         return Ok(screens);
     }
 
-    // 4. Create screen
+    // 4. Create screen - Admin or TheatreManager
+    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.TheatreManager)]
     [HttpPost]
     public async Task<IActionResult> Create(CreateScreenRequest request)
     {
@@ -75,11 +87,17 @@ public class ScreensController : ControllerBase
             screen);
     }
 
-    // 5. Update screen
+    // 5. Update screen - Admin or TheatreManager
+    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.TheatreManager)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id, UpdateScreenRequest request)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid ScreenId.");
+        }
+
         var screen = await _screenService.UpdateAsync(id, request);
 
         if (screen == null)
@@ -90,10 +108,16 @@ public class ScreensController : ControllerBase
         return Ok(screen);
     }
 
-    // 6. Delete screen
+    // 6. Delete screen - Admin or TheatreManager
+    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.TheatreManager)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid ScreenId.");
+        }
+
         var result = await _screenService.DeleteAsync(id);
 
         if (!result)

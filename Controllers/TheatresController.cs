@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using MovieTicketBookingSystem.Constants;
 using MovieTicketBookingSystem.DTOs.Theatres;
 using MovieTicketBookingSystem.Services.Interfaces;
 
@@ -15,7 +18,8 @@ public class TheatresController : ControllerBase
         _theatreService = theatreService;
     }
 
-    // 1. Get all theatres
+    // 1. Get all theatres - Public
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] int pageNumber = 1,
@@ -32,10 +36,16 @@ public class TheatresController : ControllerBase
         return Ok(theatres);
     }
 
-    // 2. Get theatre by ID
+    // 2. Get theatre by ID - Public
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid TheatreId.");
+        }
+
         var theatre = await _theatreService.GetByIdAsync(id);
 
         if (theatre == null)
@@ -46,7 +56,8 @@ public class TheatresController : ControllerBase
         return Ok(theatre);
     }
 
-    // 3. Create theatre
+    // 3. Create theatre - Admin only
+    [Authorize(Roles = UserRoles.Admin)]
     [HttpPost]
     public async Task<IActionResult> Create(
         CreateTheatreRequest request)
@@ -59,11 +70,17 @@ public class TheatresController : ControllerBase
             theatre);
     }
 
-    // 4. Update theatre
+    // 4. Update theatre - Admin only
+    [Authorize(Roles = UserRoles.Admin)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(
         int id, UpdateTheatreRequest request)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid TheatreId.");
+        }
+
         var theatre = await _theatreService.UpdateAsync(id, request);
 
         if (theatre == null)
@@ -74,10 +91,16 @@ public class TheatresController : ControllerBase
         return Ok(theatre);
     }
 
-    // 5. Delete theatre
+    // 5. Delete theatre - Admin only
+    [Authorize(Roles = UserRoles.Admin)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (id < 1)
+        {
+            return BadRequest("Invalid TheatreId.");
+        }
+
         var result = await _theatreService.DeleteAsync(id);
 
         if (!result)
