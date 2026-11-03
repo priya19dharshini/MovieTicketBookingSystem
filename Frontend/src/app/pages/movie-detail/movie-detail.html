@@ -1,0 +1,63 @@
+<a class="btn btn--sm back" routerLink="/movies">← Back to movies</a>
+
+@if (error(); as message) {
+  <div class="alert" role="alert">
+    <span>{{ message }}</span>
+    <button class="btn btn--sm" type="button" (click)="error.set(null)">Dismiss</button>
+  </div>
+}
+
+@if (loading()) {
+  <div class="state" role="status">
+    <div class="spinner"></div>
+    <p>Loading movie…</p>
+  </div>
+} @else if (movie(); as m) {
+  <article class="detail">
+    <div class="detail__tags">
+      <span class="tag tag--accent">{{ m.genre }}</span>
+      <span class="tag">{{ m.language }}</span>
+    </div>
+
+    <h1>{{ m.title }}</h1>
+
+    <dl class="facts">
+      <div>
+        <dt>Duration</dt>
+        <dd>{{ m.durationMinutes | duration }}</dd>
+      </div>
+      <div>
+        <dt>Release date</dt>
+        <dd>{{ m.releaseDate | date: 'longDate' }}</dd>
+      </div>
+      <div>
+        <dt>Language</dt>
+        <dd>{{ m.language }}</dd>
+      </div>
+      <div>
+        <dt>Genre</dt>
+        <dd>{{ m.genre }}</dd>
+      </div>
+    </dl>
+
+    <h2>About</h2>
+    <p class="desc">{{ m.description || 'No description available.' }}</p>
+
+    <div class="detail__actions">
+      <a class="btn btn--primary" [routerLink]="['/movies', m.movieId, 'edit']">Edit</a>
+      @if (!confirming()) {
+        <button class="btn btn--danger" type="button" (click)="confirming.set(true)">Delete</button>
+      } @else {
+        <span class="confirm">
+          Delete this movie?
+          <button class="btn btn--sm btn--solid-danger" type="button" [disabled]="deleting()" (click)="delete()">
+            {{ deleting() ? 'Deleting…' : 'Yes, delete' }}
+          </button>
+          <button class="btn btn--sm" type="button" [disabled]="deleting()" (click)="confirming.set(false)">Cancel</button>
+        </span>
+      }
+    </div>
+  </article>
+} @else if (!error()) {
+  <div class="state"><h2>Movie not found</h2></div>
+}

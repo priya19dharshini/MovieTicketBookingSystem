@@ -1,0 +1,48 @@
+.toolbar {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 560px) { .toolbar { grid-template-columns: 1fr; } }
+
+.count { color: var(--muted); font-size: .9rem; margin: 0 0 .75rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1.1rem;
+}
+
+.card {
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--muted); }
+
+.card__body { display: flex; flex-direction: column; gap: .55rem; padding: 1.1rem 1.1rem .8rem; flex: 1; }
+.card__tags { display: flex; gap: .4rem; flex-wrap: wrap; }
+.card__title { font-size: 1.2rem; }
+.card__meta { margin: 0; color: var(--muted); font-size: .88rem; }
+.card__desc {
+  margin: 0; color: var(--muted); font-size: .9rem;
+  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.card__actions {
+  display: flex; gap: .5rem; padding: .8rem 1.1rem 1.1rem;
+  border-top: 1px solid var(--border);
+}
+
+.backdrop {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1rem;
+  background: rgba(0, 0, 0, .6);
+}
+.dialog {
+  width: min(420px, 100%); padding: 1.5rem; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+}
+.dialog h2 { font-size: 1.2rem; margin-bottom: .6rem; }
+.dialog p { color: var(--muted); margin: 0 0 1.25rem; }
+.dialog__actions { display: flex; justify-content: flex-end; gap: .6rem; }

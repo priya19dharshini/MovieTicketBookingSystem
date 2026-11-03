@@ -1,0 +1,21 @@
+.back { margin-bottom: 1.25rem; }
+
+.detail {
+  max-width: 760px; padding: 1.75rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.detail__tags { display: flex; gap: .4rem; margin-bottom: .8rem; }
+.detail h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); margin-bottom: 1.25rem; }
+.detail h2 { font-size: 1.05rem; margin: 1.5rem 0 .4rem; }
+
+.facts {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; margin: 0;
+}
+.facts div { padding: .8rem 1rem; background: var(--surface-2); border-radius: 10px; }
+.facts dt { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.facts dd { margin: .15rem 0 0; font-weight: 700; }
+
+.desc { color: var(--muted); margin: 0; white-space: pre-line; }
+
+.detail__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-top: 1.75rem; }
+.confirm { display: inline-flex; align-items: center; gap: .5rem; color: var(--muted); font-size: .92rem; }

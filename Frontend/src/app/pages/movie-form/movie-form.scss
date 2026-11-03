@@ -1,0 +1,13 @@
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 760px;
+}
+.span-2 { grid-column: 1 / -1; }
+.actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .5rem; }
+@media (max-width: 560px) { .form { grid-template-columns: 1fr; } }

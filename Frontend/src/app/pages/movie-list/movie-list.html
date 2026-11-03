@@ -1,0 +1,90 @@
+<div class="page-head">
+  <div>
+    <h1>Now showing</h1>
+    <p>Browse, search and manage the movies in your catalogue.</p>
+  </div>
+  <a class="btn btn--primary" routerLink="/movies/new">＋ Add movie</a>
+</div>
+
+<div class="toolbar">
+  <input
+    class="input"
+    type="search"
+    placeholder="Search by title…"
+    aria-label="Search movies by title"
+    [formControl]="searchControl"
+  />
+  <select class="input" aria-label="Filter by genre" [value]="selectedGenre()" (change)="onGenreChange($event)">
+    <option value="">All genres</option>
+    @for (g of genres(); track g) {
+      <option [value]="g">{{ g }}</option>
+    }
+  </select>
+</div>
+
+@if (error(); as message) {
+  <div class="alert" role="alert">
+    <span>{{ message }}</span>
+    <button class="btn btn--sm" type="button" (click)="error.set(null)">Dismiss</button>
+  </div>
+}
+
+@if (loading()) {
+  <div class="state" role="status">
+    <div class="spinner"></div>
+    <p>Loading movies…</p>
+  </div>
+} @else if (visibleMovies().length === 0) {
+  <div class="state">
+    <h2>No movies found</h2>
+    @if (searchControl.value || selectedGenre()) {
+      <p>Nothing matches your filters.</p>
+      <button class="btn" type="button" (click)="clearFilters()">Clear filters</button>
+    } @else {
+      <p>Your catalogue is empty. Add the first movie to get started.</p>
+      <a class="btn btn--primary" routerLink="/movies/new">＋ Add movie</a>
+    }
+  </div>
+} @else {
+  <p class="count">{{ visibleMovies().length }} {{ visibleMovies().length === 1 ? 'movie' : 'movies' }}</p>
+
+  <div class="grid">
+    @for (movie of visibleMovies(); track movie.movieId) {
+      <article class="card">
+        <a class="card__body" [routerLink]="['/movies', movie.movieId]">
+          <div class="card__tags">
+            <span class="tag tag--accent">{{ movie.genre }}</span>
+            <span class="tag">{{ movie.language }}</span>
+          </div>
+          <h2 class="card__title">{{ movie.title }}</h2>
+          <p class="card__meta">
+            {{ movie.durationMinutes | duration }} · {{ movie.releaseDate | date: 'mediumDate' }}
+          </p>
+          @if (movie.description) {
+            <p class="card__desc">{{ movie.description }}</p>
+          }
+        </a>
+        <div class="card__actions">
+          <a class="btn btn--sm" [routerLink]="['/movies', movie.movieId, 'edit']">Edit</a>
+          <button class="btn btn--sm btn--danger" type="button" (click)="askDelete(movie)">Delete</button>
+        </div>
+      </article>
+    }
+  </div>
+}
+
+@if (pendingDelete(); as movie) {
+  <div class="backdrop" (click)="cancelDelete()" role="presentation">
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="del-title" tabindex="-1"
+         (click)="$event.stopPropagation()" (keydown.escape)="cancelDelete()">
+      <h2 id="del-title">Delete this movie?</h2>
+      <p><strong>{{ movie.title }}</strong> will be permanently removed. This cannot be undone.</p>
+      <div class="dialog__actions">
+        <button class="btn" type="button" [disabled]="deleting()" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn--solid-danger" type="button" [disabled]="deleting()" (click)="confirmDelete()">
+          {{ deleting() ? 'Deleting…' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

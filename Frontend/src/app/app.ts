@@ -1,0 +1,6 @@
+import { Component } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { AuthService } from './core/auth.service';
+@Component({ selector: 'app-root', imports: [RouterOutlet, RouterLink], template: `
+<header class="topbar"><a class="brand" routerLink="/movies"><span class="brand-mark">C</span><span>CINE<span class="gold">BOOK</span></span></a><nav><a routerLink="/movies">Discover</a>@if(auth.role==='Admin'){<a routerLink="/admin">Control centre</a>}@if(auth.role==='TheatreManager'){<a routerLink="/manager">Manager</a>}@if(auth.role==='Customer'){<a routerLink="/my-bookings">My bookings</a>}</nav><div class="top-actions">@if(auth.loggedIn){<span class="user-pill">{{auth.name}} · {{auth.role}}</span><button class="btn btn-outline" (click)="signOut()">Sign out</button>}@else{<a routerLink="/login" class="btn btn-outline">Sign in</a><a routerLink="/register" class="btn btn-primary">Join CineBook</a>}</div></header><main class="app-main"><router-outlet /></main><footer>© 2026 CineBook · Your next movie night starts here.</footer>` })
+export class App { constructor(public auth: AuthService) {} signOut(){ this.auth.logout(); location.href='/movies'; } }

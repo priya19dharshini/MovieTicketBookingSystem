@@ -1,0 +1,81 @@
+<div class="page-head">
+  <div>
+    <h1>{{ isEdit ? 'Edit movie' : 'Add a new movie' }}</h1>
+    <p>{{ isEdit ? 'Update the details below and save.' : 'Fill in the details to add it to the catalogue.' }}</p>
+  </div>
+  <a class="btn" routerLink="/movies">← Back to movies</a>
+</div>
+
+@if (error(); as message) {
+  <div class="alert" role="alert">
+    <span>{{ message }}</span>
+    <button class="btn btn--sm" type="button" (click)="error.set(null)">Dismiss</button>
+  </div>
+}
+
+@if (loading()) {
+  <div class="state" role="status">
+    <div class="spinner"></div>
+    <p>Loading movie…</p>
+  </div>
+} @else {
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="field span-2">
+      <label for="title">Title <span class="req">*</span></label>
+      <input id="title" class="input" formControlName="title" maxlength="150" [class.invalid]="invalid('title')" />
+      @if (invalid('title')) {
+        <span class="field-error">Title is required (max 150 characters).</span>
+      }
+    </div>
+
+    <div class="field span-2">
+      <label for="description">Description</label>
+      <textarea id="description" class="input" formControlName="description" maxlength="500"
+                [class.invalid]="invalid('description')"></textarea>
+      <span class="field-hint">{{ form.controls.description.value.length }} / 500</span>
+    </div>
+
+    <div class="field">
+      <label for="genre">Genre <span class="req">*</span></label>
+      <input id="genre" class="input" formControlName="genre" maxlength="50" placeholder="e.g. Action"
+             [class.invalid]="invalid('genre')" />
+      @if (invalid('genre')) {
+        <span class="field-error">Genre is required (max 50 characters).</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="language">Language <span class="req">*</span></label>
+      <input id="language" class="input" formControlName="language" maxlength="50" placeholder="e.g. Tamil"
+             [class.invalid]="invalid('language')" />
+      @if (invalid('language')) {
+        <span class="field-error">Language is required (max 50 characters).</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="duration">Duration (minutes) <span class="req">*</span></label>
+      <input id="duration" class="input" type="number" min="1" step="1" formControlName="durationMinutes"
+             [class.invalid]="invalid('durationMinutes')" />
+      @if (invalid('durationMinutes')) {
+        <span class="field-error">Enter a whole number greater than 0.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="releaseDate">Release date <span class="req">*</span></label>
+      <input id="releaseDate" class="input" type="date" formControlName="releaseDate"
+             [class.invalid]="invalid('releaseDate')" />
+      @if (invalid('releaseDate')) {
+        <span class="field-error">Release date is required.</span>
+      }
+    </div>
+
+    <div class="actions span-2">
+      <a class="btn" routerLink="/movies">Cancel</a>
+      <button class="btn btn--primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : isEdit ? 'Save changes' : 'Add movie' }}
+      </button>
+    </div>
+  </form>
+}
