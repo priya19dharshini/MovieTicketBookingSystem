@@ -11,7 +11,7 @@ public class JwtService(IConfiguration configuration) : IJwtService
 {
     public string GenerateToken(User user)
     {
-        var jwt = configuration.GetSection("Jwt");
+        var jwt = configuration.GetSection("JwtSettings");
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(jwt["Key"]!)
