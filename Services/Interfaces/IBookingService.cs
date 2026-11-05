@@ -1,11 +1,13 @@
-﻿using MovieTicketBookingSystem.DTOs.Bookings;
+﻿
+using MovieTicketBookingSystem.DTOs.Bookings;
 
 namespace MovieTicketBookingSystem.Services.Interfaces;
 
 public interface IBookingService
 {
     Task<BookingResponse> CreateAsync(
-        CreateBookingRequest request);
+        CreateBookingRequest request,
+        int userId);
 
     Task<List<BookingResponse>> GetAllAsync(
         int? showId,

@@ -235,6 +235,12 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<Booking>()
+    .HasOne(b => b.User)
+    .WithMany()
+    .HasForeignKey(b => b.UserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
         // BookingSeat configuration
         modelBuilder.Entity<BookingSeat>(entity =>
         {

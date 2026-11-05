@@ -2,14 +2,17 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MovieTicketBookingSystem.Authorization;
+using MovieTicketBookingSystem.Constants;
 using MovieTicketBookingSystem.Data;
+using MovieTicketBookingSystem.Middleware;
+using MovieTicketBookingSystem.Models;
 using MovieTicketBookingSystem.Repositories;
 using MovieTicketBookingSystem.Repositories.Interfaces;
 using MovieTicketBookingSystem.Services;
 using MovieTicketBookingSystem.Services.Interfaces;
-using System.Text;
-using MovieTicketBookingSystem.Models;
 using Scalar.AspNetCore;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +45,7 @@ builder.Services.AddScoped<ISeatRepository, SeatRepository>();
 builder.Services.AddScoped<IShowRepository, ShowRepository>();
 
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+
 
 builder.Services.AddScoped<IMovieService, MovieService>();
 
@@ -90,7 +94,18 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        AuthorizationPolicies.BookingOwner,
+        policy =>
+        {
+            policy.RequireAuthenticatedUser();
+
+            policy.AddRequirements(
+                new BookingOwnerRequirement());
+        });
+});
 
 var app = builder.Build();
 
@@ -101,14 +116,46 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+
+// 1. HTTPS Redirection
 app.UseHttpsRedirection();
 
-app.UseCors("AngularPolicy");
+// 2. Routing
+//app.UseRouting();
 
+// 3. Endpoint Metadata Diagnostics
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<EndpointMetadataMiddleware>();
+}
+
+// 4. Authentication
+// Validates JWT and populates HttpContext.User
 app.UseAuthentication();
 
+// 5. Authentication and Authorization Diagnostics
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<AuthenticationDiagnosticsMiddleware>();
+
+    app.UseMiddleware<AuthorizationDiagnosticsMiddleware>();
+}
+
+// 6. Authorization
+// Checks endpoint access permissions
 app.UseAuthorization();
+
+
+// ==========================================
+// 12. MAP CONTROLLERS
+// ==========================================
 
 app.MapControllers();
 
+
+// ==========================================
+// 13. RUN APPLICATION
+// ==========================================
+
 app.Run();
+

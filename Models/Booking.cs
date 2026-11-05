@@ -1,28 +1,36 @@
-﻿namespace MovieTicketBookingSystem.Models;
-
-public class Booking
+﻿namespace MovieTicketBookingSystem.Models
 {
-    public int BookingId { get; set; }
 
-    public string BookingReference { get; set; } = string.Empty;
+    public class Booking
+    {
+        public int BookingId { get; set; }
 
-    public int ShowId { get; set; }
+        public string BookingReference { get; set; } = string.Empty;
 
-    public string CustomerName { get; set; } = string.Empty;
+        public int ShowId { get; set; }
 
-    public string CustomerEmail { get; set; } = string.Empty;
+        // User who created this booking
+        public int UserId { get; set; }
 
-    public string CustomerPhone { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
 
-    public DateTime BookingDate { get; set; }
+        public string CustomerEmail { get; set; } = string.Empty;
 
-    public decimal TotalAmount { get; set; }
+        public string CustomerPhone { get; set; } = string.Empty;
 
-    public string Status { get; set; } = "Confirmed";
+        public DateTime BookingDate { get; set; }
 
-    // Navigation properties
-    public Show Show { get; set; } = null!;
+        public decimal TotalAmount { get; set; }
 
-    public ICollection<BookingSeat> BookingSeats { get; set; }
-        = new List<BookingSeat>();
+        public string Status { get; set; } = "Confirmed";
+
+        // Navigation properties
+        public Show Show { get; set; } = null!;
+
+        public User User { get; set; } = null!;
+
+        public ICollection<BookingSeat> BookingSeats { get; set; }
+            = new List<BookingSeat>();
+    }
+
 }

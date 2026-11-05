@@ -20,7 +20,8 @@ public class BookingService : IBookingService
     }
 
     public async Task<BookingResponse> CreateAsync(
-        CreateBookingRequest request)
+    CreateBookingRequest request,
+    int userId)
     {
         // 1. Validate customer details.
         ValidateCustomerDetails(
@@ -87,9 +88,11 @@ public class BookingService : IBookingService
         var booking = new Booking
         {
             BookingReference =
-                "MOV" + Guid.NewGuid().ToString("N")[..12].ToUpper(),
+        "MOV" + Guid.NewGuid().ToString("N")[..12].ToUpper(),
 
             ShowId = request.ShowId,
+
+            UserId = userId,
 
             CustomerName = request.CustomerName.Trim(),
 
@@ -285,8 +288,8 @@ public class BookingService : IBookingService
     }
 
     private static BookingResponse MapToResponse(
-        Booking booking,
-        List<ShowSeat> showSeats)
+    Booking booking,
+    List<ShowSeat> showSeats)
     {
         return new BookingResponse
         {
@@ -295,6 +298,8 @@ public class BookingService : IBookingService
             BookingReference = booking.BookingReference,
 
             ShowId = booking.ShowId,
+
+            UserId = booking.UserId,
 
             CustomerName = booking.CustomerName,
 

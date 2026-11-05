@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MovieTicketBookingSystem.DTOs.Bookings;
 using MovieTicketBookingSystem.Constants;
@@ -12,10 +13,14 @@ namespace MovieTicketBookingSystem.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly IBookingService _bookingService;
+    private readonly IAuthorizationService _authorizationService;
 
-    public BookingsController(IBookingService bookingService)
+    public BookingsController(
+        IBookingService bookingService,
+        IAuthorizationService authorizationService)
     {
         _bookingService = bookingService;
+        _authorizationService = authorizationService;
     }
 
     private string? GetCurrentUserId()
@@ -37,7 +42,9 @@ public class BookingsController : ControllerBase
 
         try
         {
-            var booking = await _bookingService.CreateAsync(request);
+            var booking = await _bookingService.CreateAsync(
+                request,
+                userId);
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -96,8 +103,14 @@ public class BookingsController : ControllerBase
         if (booking == null)
             return NotFound("Booking not found.");
 
-        // Ownership verification will be added in BookingService.
-        // Do not expose another customer's booking.
+        var authorizationResult =
+            await _authorizationService.AuthorizeAsync(
+                User,
+                booking,
+                AuthorizationPolicies.BookingOwner);
+
+        if (!authorizationResult.Succeeded)
+            return Forbid();
 
         return Ok(booking);
     }
@@ -120,7 +133,8 @@ public class BookingsController : ControllerBase
     }
 
     // PUT: api/bookings/1/cancel
-    // Customer and Admin can cancel bookings.
+    // Customer can cancel own booking.
+    // Admin can cancel any booking.
     [Authorize(Roles = UserRoles.Customer + "," + UserRoles.Admin)]
     [HttpPut("{id:int}/cancel")]
     public async Task<IActionResult> Cancel(int id)
@@ -135,14 +149,30 @@ public class BookingsController : ControllerBase
 
         try
         {
-            var booking = await _bookingService.CancelAsync(id);
+            // Retrieve booking before cancellation.
+            var booking = await _bookingService.GetByIdAsync(id);
 
             if (booking == null)
                 return NotFound("Booking not found.");
 
-            // Ownership verification will be added in BookingService.
+            // Perform resource-based authorization.
+            var authorizationResult =
+                await _authorizationService.AuthorizeAsync(
+                    User,
+                    booking,
+                    AuthorizationPolicies.BookingOwner);
 
-            return Ok(booking);
+            if (!authorizationResult.Succeeded)
+                return Forbid();
+
+            // Cancel only after successful authorization.
+            var cancelledBooking =
+                await _bookingService.CancelAsync(id);
+
+            if (cancelledBooking == null)
+                return NotFound("Booking not found.");
+
+            return Ok(cancelledBooking);
         }
         catch (InvalidOperationException ex)
         {

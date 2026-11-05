@@ -1,4 +1,7 @@
-﻿namespace MovieTicketBookingSystem.DTOs.Bookings;
+﻿
+using System.Text.Json.Serialization;
+
+namespace MovieTicketBookingSystem.DTOs.Bookings;
 
 public class BookingResponse
 {
@@ -21,4 +24,9 @@ public class BookingResponse
     public string Status { get; set; } = string.Empty;
 
     public List<string> Seats { get; set; } = new();
+
+    // Used internally for authorization.
+    // It will not appear in API JSON responses.
+    [JsonIgnore]
+    public int UserId { get; set; }
 }
